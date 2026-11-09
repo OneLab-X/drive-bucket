@@ -16,3 +16,8 @@ video/**/.hyperframes/
 video/**/renders/
 video/**/.thumbnails/
 video/**/.waveform-cache/
+
+# Landing page: media is copied from docs/media at deploy time
+site/media/
+_site/
+.DS_Store

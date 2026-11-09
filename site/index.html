@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>drivebucket: Google Drive as object storage</title>
+<meta name="description" content="Use Google Drive as an S3-compatible object store. Core adapter, S3 API server with image resizing, Next.js upload route and CLI. Open source, MIT.">
+<meta property="og:title" content="drivebucket: Google Drive as object storage">
+<meta property="og:description" content="Store your app's files in Google Drive. It speaks the S3 API, so existing @aws-sdk/client-s3 code works by changing endpoint.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#1e1e2e">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23E0441A'/%3E%3Cpath d='M8 12h16l-2 13H10z' fill='none' stroke='white' stroke-width='2.4' stroke-linejoin='round'/%3E%3Cpath d='M11 12a5 5 0 0 1 10 0' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
+<script>
+  // Apply the saved theme before first paint to avoid a flash.
+  (function () {
+    try {
+      var t = localStorage.getItem('db-theme');
+      if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+    } catch (e) {}
+  })();
+</script>
+<style>
+  :root {
+    color-scheme: light;
+    --page: #ffffff;
+    --ink: #20252b;
+    --muted: #5b6570;
+    --faint: #7a838c;
+    --line: #e0e5e9;
+    --soft: #f4f6f8;
+    --card: #ffffff;
+    --term: #f7f8fa;
+    --accent: #c2380f;
+    --accent-ink: #ffffff;
+    --link: #b8360f;
+    --ok: #2f7d4f;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    --font-mono: "SFMono-Regular", ui-monospace, Menlo, Consolas, "Liberation Mono", monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --page: #1e1e2e;
+      --ink: #cdd6f4;
+      --muted: #a6adc8;
+      --faint: #8b91ab;
+      --line: #393a4f;
+      --soft: #24243a;
+      --card: #1e1e2e;
+      --term: #181825;
+      --accent: #ff8a5c;
+      --accent-ink: #1e1e2e;
+      --link: #ffa27f;
+      --ok: #a6e3a1;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #1e1e2e;
+    --ink: #cdd6f4;
+    --muted: #a6adc8;
+    --faint: #8b91ab;
+    --line: #393a4f;
+    --soft: #24243a;
+    --card: #1e1e2e;
+    --term: #181825;
+    --accent: #ff8a5c;
+    --accent-ink: #1e1e2e;
+    --link: #ffa27f;
+    --ok: #a6e3a1;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.65;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--link); text-underline-offset: 3px; text-decoration-thickness: 1px; }
+  a:hover { text-decoration-thickness: 2px; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+  code, pre { font-family: var(--font-mono); }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 22px; }
+  .narrow { max-width: 760px; }
+
+  /* Header */
+  header.top { border-bottom: 1px solid var(--line); background: var(--page); }
+  .bar { display: flex; align-items: center; justify-content: space-between; height: 60px; gap: 16px; }
+  .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); text-decoration: none; font-weight: 650; font-size: 18px; letter-spacing: -0.3px; }
+  .brand svg { width: 26px; height: 26px; flex: none; }
+  .tools { display: flex; align-items: center; gap: 6px; }
+  .icon-btn {
+    display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 9px;
+    border: 0; border-radius: 6px; background: transparent; color: var(--muted);
+    font: inherit; font-size: 14px; text-decoration: none; cursor: pointer;
+  }
+  .icon-btn:hover { color: var(--ink); background: var(--soft); }
+  .icon-btn svg { width: 18px; height: 18px; }
+  nav.sub { display: flex; gap: 22px; height: 42px; align-items: center; font-size: 14.5px; overflow-x: auto; scrollbar-width: none; }
+  nav.sub::-webkit-scrollbar { display: none; }
+  nav.sub a { color: var(--muted); text-decoration: none; white-space: nowrap; }
+  nav.sub a:hover, nav.sub a[aria-current] { color: var(--ink); }
+
+  /* Hero */
+  .hero { padding: 72px 0 24px; }
+  .eyebrow { color: var(--muted); font-size: 14.5px; margin: 0 0 14px; }
+  h1 { font-size: clamp(34px, 6vw, 48px); line-height: 1.1; letter-spacing: -0.035em; font-weight: 650; margin: 0 0 22px; }
+  .lede { color: var(--muted); font-size: 17px; max-width: 600px; margin: 0 0 30px; }
+  .lede code { color: var(--ink); font-size: 0.9em; }
+  .ctas { display: flex; flex-wrap: wrap; align-items: center; gap: 22px; margin-bottom: 52px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px; padding: 10px 17px;
+    background: var(--accent); color: var(--accent-ink); border: 1px solid var(--accent);
+    border-radius: 6px; font-weight: 550; font-size: 15px; text-decoration: none;
+  }
+  .btn:hover { filter: brightness(1.06); text-decoration: none; }
+  .btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+  .btn.ghost:hover { background: var(--soft); }
+
+  h2 { font-size: clamp(26px, 4vw, 34px); letter-spacing: -0.03em; line-height: 1.15; font-weight: 650; margin: 0 0 16px; }
+  h3 { font-size: 18px; letter-spacing: -0.015em; font-weight: 650; margin: 0 0 6px; }
+  .sub-h { font-size: 20px; letter-spacing: -0.02em; margin: 0 0 6px; font-weight: 650; }
+  .hint { color: var(--muted); font-size: 14.5px; margin: 0 0 12px; }
+
+  /* Terminal card */
+  .term { border: 1px solid var(--line); border-radius: 8px; background: var(--term); overflow: hidden; }
+  .term-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 8px 10px 8px 14px; border-bottom: 1px solid var(--line); font-size: 13.5px; color: var(--muted);
+  }
+  .term-head .dots { display: inline-flex; gap: 4px; margin-right: 10px; vertical-align: middle; }
+  .term-head .dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--faint); opacity: .7; }
+  .copy {
+    border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 13.5px;
+    padding: 4px 9px; border-radius: 5px; cursor: pointer;
+  }
+  .copy:hover { background: var(--soft); }
+  .copy[data-done] { color: var(--ok); }
+  .term pre { margin: 0; padding: 18px 20px; overflow-x: auto; font-size: 13.5px; line-height: 1.75; color: var(--ink); }
+  .term pre .c { color: var(--faint); }
+  .term pre .k { color: var(--link); }
+  .term pre .s { color: var(--ok); }
+  .term pre .p { color: var(--faint); user-select: none; }
+
+  details.more { margin-top: 18px; font-size: 14.5px; color: var(--muted); }
+  details.more summary { cursor: pointer; color: var(--ink); }
+  details.more ol { margin: 12px 0 0; padding-left: 20px; }
+  details.more li { margin: 4px 0; }
+
+  /* Quick links row */
+  .links3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; padding: 38px 0 44px; border-top: 1px solid var(--line); margin-top: 52px; }
+  .links3 a { font-weight: 550; }
+  .links3 p { margin: 6px 0 0; color: var(--muted); font-size: 14.5px; }
+
+  /* Sections */
+  section.block { padding: 72px 0; border-top: 1px solid var(--line); }
+  .intro { color: var(--muted); font-size: 18px; max-width: 820px; margin: 0 0 40px; }
+
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; list-style: none; padding: 0; margin: 0 0 44px; counter-reset: s; }
+  .steps li { counter-increment: s; }
+  .steps h3::before { content: counter(s) ". "; color: var(--muted); font-weight: 500; }
+  .steps p { margin: 0; color: var(--muted); font-size: 15px; }
+  .steps code { color: var(--ink); font-size: 0.88em; }
+
+  .video {
+    border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: #000;
+    aspect-ratio: 16 / 9;
+  }
+  .video video { display: block; width: 100%; height: 100%; }
+  .caption { color: var(--muted); font-size: 13.5px; margin: 10px 0 0; }
+
+  /* Packages */
+  .pkgs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .pkg { border: 1px solid var(--line); border-radius: 8px; padding: 20px 22px; background: var(--card); }
+  .pkg .name { font-family: var(--font-mono); font-size: 14.5px; color: var(--ink); font-weight: 600; }
+  .pkg p { color: var(--muted); font-size: 15px; margin: 8px 0 12px; }
+  .pkg .meta { display: flex; gap: 16px; font-size: 14px; flex-wrap: wrap; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 18px; overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    border: 0; background: transparent; font: inherit; font-size: 14.5px; color: var(--muted);
+    padding: 9px 12px; border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer; white-space: nowrap;
+  }
+  .tab:hover { color: var(--ink); }
+  .tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+  .panel[hidden] { display: none; }
+  .panel-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 32px; align-items: start; }
+  .panel-grid .side p { color: var(--muted); font-size: 15px; margin: 0 0 14px; }
+  .panel-grid .side h3 { margin-top: 0; }
+
+  /* Limits */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  th { font-size: 13px; color: var(--muted); font-weight: 600; background: var(--soft); }
+  td:first-child { font-weight: 550; white-space: nowrap; }
+  td:nth-child(2) { font-family: var(--font-mono); font-size: 13.5px; white-space: nowrap; }
+  td:last-child { color: var(--muted); }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 36px; }
+  .two ul { margin: 8px 0 0; padding-left: 20px; color: var(--muted); font-size: 15px; }
+  .two li { margin: 5px 0; }
+
+  /* Docs */
+  .docs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border-top: 1px solid var(--line); }
+  .doc { padding: 22px 22px 24px 0; border-bottom: 1px solid var(--line); }
+  .doc a { font-weight: 550; }
+  .doc p { margin: 6px 0 0; color: var(--muted); font-size: 14.5px; }
+
+  footer { border-top: 1px solid var(--line); padding: 34px 0 60px; color: var(--muted); font-size: 14px; }
+  footer .row { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+  footer a { color: var(--muted); }
+  footer nav { display: flex; gap: 18px; flex-wrap: wrap; }
+
+  .to-top {
+    position: fixed; right: 20px; bottom: 20px; display: inline-flex; align-items: center; gap: 6px;
+    padding: 9px 13px; border: 1px solid var(--line); border-radius: 7px; background: var(--page);
+    color: var(--ink); font-size: 14px; text-decoration: none; opacity: 0; pointer-events: none;
+    transition: opacity .2s; box-shadow: 0 4px 18px rgba(0,0,0,.12);
+  }
+  .to-top.show { opacity: 1; pointer-events: auto; }
+
+  @media (max-width: 860px) {
+    .steps, .links3, .docs { grid-template-columns: 1fr; gap: 20px; }
+    .docs { gap: 0; }
+    .pkgs, .two, .panel-grid { grid-template-columns: 1fr; }
+    .hero { padding-top: 48px; }
+    section.block { padding: 56px 0; }
+    .hide-sm { display: none; }
+  }
+  @media (max-width: 600px) {
+    thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    table, tbody, tr, td { display: block; }
+    tr { padding: 14px 16px; border-bottom: 1px solid var(--line); }
+    tr:last-child { border-bottom: 0; }
+    td { padding: 0; border: 0; }
+    td:nth-child(2) { margin: 2px 0 6px; color: var(--link); }
+  }
+  @media (max-width: 480px) {
+    .wrap { padding: 0 16px; }
+    .term pre { padding: 14px 14px; font-size: 12.5px; }
+    td:first-child, td:nth-child(2) { white-space: normal; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="bar">
+      <a class="brand" href="#" aria-label="drivebucket home">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#E0441A"/><path d="M8 12h16l-2 13H10z" fill="none" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"/><path d="M11 12a5 5 0 0 1 10 0" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>
+        drivebucket
+      </a>
+      <div class="tools">
+        <a class="icon-btn hide-sm" href="https://www.npmjs.com/package/@drivebucket/core" title="npm">npm</a>
+        <button class="icon-btn" id="theme" type="button" aria-label="Toggle colour theme">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        </button>
+        <a class="icon-btn" href="https://github.com/OneLab-X/drive-bucket" aria-label="GitHub repository">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.7 5.39-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
+          <span class="hide-sm">GitHub</span>
+        </a>
+      </div>
+    </div>
+    <nav class="sub" aria-label="Sections">
+      <a href="#start">Get started</a>
+      <a href="#how">How it works</a>
+      <a href="#packages">Packages</a>
+      <a href="#examples">Examples</a>
+      <a href="#limits">Limits</a>
+      <a href="#docs">Docs</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <section class="hero narrow" id="start">
+      <p class="eyebrow">Open-source object storage, on the Drive you already have</p>
+      <h1>Use Google Drive<br>as object storage.</h1>
+      <p class="lede">Store your app's photos, documents and backups in Google Drive instead of S3. It speaks the S3 API, so your existing <code>@aws-sdk/client-s3</code> code works by changing <code>endpoint</code>.</p>
+      <div class="ctas">
+        <a class="btn" href="https://github.com/OneLab-X/drive-bucket">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.7 5.39-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
+          View on GitHub
+        </a>
+        <a href="#docs">Read the docs ↓</a>
+      </div>
+
+      <h2 class="sub-h">Set up drivebucket</h2>
+      <p class="hint">Get a refresh token, check the setup and create your first bucket:</p>
+      <div class="term">
+        <div class="term-head"><span><span class="dots"><i></i><i></i><i></i></span>Terminal</span><button class="copy" type="button" data-copy="setup">Copy</button></div>
+<pre id="setup"><span class="p">$ </span>npx @drivebucket/cli auth login --client-id ID --client-secret SECRET &gt; .env
+<span class="p">$ </span>npx @drivebucket/cli --env-file .env doctor
+<span class="p">$ </span>npx @drivebucket/cli --env-file .env buckets create photos</pre>
+      </div>
+      <details class="more">
+        <summary>Before you run it</summary>
+        <ol>
+          <li>In Google Cloud Console, enable the <strong>Google Drive API</strong>.</li>
+          <li>Create an <strong>OAuth client</strong> of type <em>Desktop app</em>.</li>
+          <li><strong>Publish</strong> the consent screen. In <em>Testing</em> mode, refresh tokens expire after 7 days.</li>
+        </ol>
+        <p style="margin:12px 0 0">Full walkthrough: <a href="https://github.com/OneLab-X/drive-bucket#quick-start">Quick start in the README →</a></p>
+      </details>
+    </section>
+
+    <div class="links3">
+      <div><a href="https://github.com/OneLab-X/drive-bucket">GitHub repository →</a><p>Source, issues and releases. MIT licensed.</p></div>
+      <div><a href="https://github.com/OneLab-X/drive-bucket/tree/production/docs">Documentation →</a><p>Quickstarts for Express, Next.js and Docker, plus S3 migration.</p></div>
+      <div><a href="https://www.npmjs.com/org/drivebucket">npm packages →</a><p>Four packages, published with provenance.</p></div>
+    </div>
+  </div>
+
+  <section class="block" id="how">
+    <div class="wrap">
+      <h2>How it works</h2>
+      <p class="intro">drivebucket maps the object-storage model onto Drive. Buckets become folders, objects become files, and your keys live in private file properties that only your app can see.</p>
+      <ol class="steps">
+        <li>
+          <h3>Bucket = folder</h3>
+          <p>Each bucket is a folder under one root: a folder the app creates in My Drive, or a shared drive on Workspace.</p>
+        </li>
+        <li>
+          <h3>Object = file</h3>
+          <p>Files sit flat in the bucket folder. The key, bucket and a SHA-256 lookup hash are stored in <code>appProperties</code>, and a key → file-id cache (memory, Redis or MongoDB) skips the search.</p>
+        </li>
+        <li>
+          <h3>Served by you, not Drive</h3>
+          <p>Uploads are MD5-checked end to end. Reads stream through your server with byte ranges and resizing. Files are never shared publicly in Drive.</p>
+        </li>
+      </ol>
+      <div class="video">
+        <video src="media/how-it-works.mp4" controls muted playsinline preload="metadata" aria-label="54-second explainer: a photo is resized in the browser, uploaded into a Drive folder, its key saved in the app's database, and served through a CDN"></video>
+      </div>
+      <p class="caption">How a photo travels through drivebucket, in 54 seconds. Turn the sound on.</p>
+    </div>
+  </section>
+
+  <section class="block" id="packages">
+    <div class="wrap">
+      <h2>Four packages</h2>
+      <p class="intro">Use the adapter directly, put the S3-compatible server in front of it, or drop the Next.js route into your app.</p>
+      <div class="pkgs">
+        <div class="pkg">
+          <div class="name">@drivebucket/core</div>
+          <p>The <code>DriveAdapter</code>: buckets, put/get/head/list/copy/delete, resumable uploads, retries with backoff and a pluggable key index.</p>
+          <div class="meta"><a href="https://www.npmjs.com/package/@drivebucket/core">npm</a><a href="https://github.com/OneLab-X/drive-bucket/tree/production/packages/core">Source</a></div>
+        </div>
+        <div class="pkg">
+          <div class="name">@drivebucket/server</div>
+          <p>Docker image with an S3-compatible API (SigV4, presigned URLs, multipart), a public read proxy, image resizing and Prometheus metrics.</p>
+          <div class="meta"><a href="https://www.npmjs.com/package/@drivebucket/server">npm</a><a href="https://github.com/OneLab-X/drive-bucket/tree/production/packages/server">Source</a><a href="https://github.com/OneLab-X/drive-bucket/pkgs/container/drivebucket">Docker image</a></div>
+        </div>
+        <div class="pkg">
+          <div class="name">@drivebucket/next</div>
+          <p>Next.js App Router route for uploads and serving, plus browser-side resize and upload with progress.</p>
+          <div class="meta"><a href="https://www.npmjs.com/package/@drivebucket/next">npm</a><a href="https://github.com/OneLab-X/drive-bucket/tree/production/packages/next">Source</a></div>
+        </div>
+        <div class="pkg">
+          <div class="name">@drivebucket/cli</div>
+          <p><code>auth login</code> with loopback OAuth, <code>doctor</code> to check your setup, and <code>buckets</code>, <code>ls</code>, <code>cp</code>, <code>rm</code>.</p>
+          <div class="meta"><a href="https://www.npmjs.com/package/@drivebucket/cli">npm</a><a href="https://github.com/OneLab-X/drive-bucket/tree/production/packages/cli">Source</a></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="examples">
+    <div class="wrap">
+      <h2>Pick your integration</h2>
+      <p class="intro">Three ways in. Each one has a full guide in the docs.</p>
+      <div class="tabs" role="tablist" aria-label="Integration examples">
+        <button class="tab" role="tab" id="t-s3" aria-controls="p-s3" aria-selected="true">S3 SDK</button>
+        <button class="tab" role="tab" id="t-next" aria-controls="p-next" aria-selected="false" tabindex="-1">Next.js</button>
+        <button class="tab" role="tab" id="t-docker" aria-controls="p-docker" aria-selected="false" tabindex="-1">Docker + CDN</button>
+      </div>
+
+      <div class="panel" role="tabpanel" id="p-s3" aria-labelledby="t-s3">
+        <div class="panel-grid">
+          <div class="term">
+            <div class="term-head"><span><span class="dots"><i></i><i></i><i></i></span>upload.ts</span><button class="copy" type="button" data-copy="code-s3">Copy</button></div>
+<pre id="code-s3"><span class="k">import</span> { S3Client, PutObjectCommand } <span class="k">from</span> <span class="s">'@aws-sdk/client-s3'</span>;
+
+<span class="k">const</span> s3 = <span class="k">new</span> S3Client({
+  endpoint: <span class="s">'https://files.example.com'</span>, <span class="c">// your drivebucket-server</span>
+  forcePathStyle: <span class="k">true</span>,
+  region: <span class="s">'us-east-1'</span>,
+  credentials,
+});
+
+<span class="k">await</span> s3.send(<span class="k">new</span> PutObjectCommand({
+  Bucket: <span class="s">'photos'</span>, Key: <span class="s">'cat.jpg'</span>, Body, ContentType: <span class="s">'image/jpeg'</span>,
+}));</pre>
+          </div>
+          <div class="side">
+            <h3>Keep your S3 code</h3>
+            <p>Point the AWS SDK at <code>drivebucket-server</code>. Signatures, presigned URLs and multipart uploads work as they do on S3.</p>
+            <p>It's a subset: path-style only, with no versioning, ACLs or object lock.</p>
+            <p><a href="https://github.com/OneLab-X/drive-bucket/blob/production/docs/migrate-from-s3.md">Migrating from S3 →</a></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" role="tabpanel" id="p-next" aria-labelledby="t-next" hidden>
+        <div class="panel-grid">
+          <div class="term">
+            <div class="term-head"><span><span class="dots"><i></i><i></i><i></i></span>app/api/files/[[...key]]/route.ts</span><button class="copy" type="button" data-copy="code-next">Copy</button></div>
+<pre id="code-next"><span class="k">import</span> { DriveAdapter, driveOptionsFromEnv } <span class="k">from</span> <span class="s">'@drivebucket/core'</span>;
+<span class="k">import</span> { createDriveRoute } <span class="k">from</span> <span class="s">'@drivebucket/next'</span>;
+
+<span class="k">export const</span> runtime = <span class="s">'nodejs'</span>;
+
+<span class="k">export const</span> { GET, HEAD, POST } = createDriveRoute({
+  adapter: () =&gt; <span class="k">new</span> DriveAdapter(driveOptionsFromEnv()),
+  bucket: <span class="s">'photos'</span>,
+  maxBytes: 12 * 1024 * 1024,
+  allowedTypes: [<span class="s">'image/*'</span>],
+});</pre>
+          </div>
+          <div class="side">
+            <h3>Upload from the browser</h3>
+            <p><code>uploadFile()</code> from <code>@drivebucket/next/client</code> downscales images to WebP before upload and returns the <code>key</code> to save in your database.</p>
+            <p>File types are checked from the bytes, so an HTML file can't pose as <code>image/png</code>.</p>
+            <p><a href="https://github.com/OneLab-X/drive-bucket/blob/production/docs/quickstart-nextjs.md">Next.js quickstart →</a></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" role="tabpanel" id="p-docker" aria-labelledby="t-docker" hidden>
+        <div class="panel-grid">
+          <div class="term">
+            <div class="term-head"><span><span class="dots"><i></i><i></i><i></i></span>Terminal</span><button class="copy" type="button" data-copy="code-docker">Copy</button></div>
+<pre id="code-docker"><span class="c"># server + Redis key index</span>
+<span class="p">$ </span>cp docker-compose.example.yml docker-compose.yml
+<span class="p">$ </span>docker compose up -d
+<span class="p">$ </span>curl localhost:8080/-/ready
+
+<span class="c"># resized, cacheable image URLs</span>
+https://files.example.com/photos/cat.jpg?w=640&amp;format=webp</pre>
+          </div>
+          <div class="side">
+            <h3>Put a CDN in front</h3>
+            <p>Every uncached read is a Drive download costing 200 quota units; a cached one costs nothing. Cloudflare in front of the proxy keeps reads fast and cheap.</p>
+            <p><a href="https://github.com/OneLab-X/drive-bucket/blob/production/docs/docker-cloudflare.md">Docker + Cloudflare guide →</a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="limits">
+    <div class="wrap">
+      <h2>The limits, up front</h2>
+      <p class="intro">Drive is not S3. drivebucket works well for an app with thousands of users and a CDN in front. Read these before you rely on it.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th scope="col">Limit</th><th scope="col">Value</th><th scope="col">What it means</th></tr></thead>
+          <tbody>
+            <tr><td>Upload volume</td><td>750 GB / user / day</td><td>After that, uploads and copies fail for 24 hours.</td></tr>
+            <tr><td>API quota</td><td>325,000 units / min</td><td>An uncached download costs 200 units: about 27 per second per user.</td></tr>
+            <tr><td>Objects per bucket</td><td>~500,000</td><td>Drive's per-folder cap. Shard across buckets beyond that.</td></tr>
+            <tr><td>Listing</td><td>Scans the bucket</td><td>Drive can't filter by prefix. Fine for thousands of objects, costly for hundreds of thousands.</td></tr>
+            <tr><td>Consistency</td><td>No atomic conditional writes</td><td><code>If-Match</code> is best effort; concurrent writers can race.</td></tr>
+            <tr><td>Object size</td><td>5 TB</td><td>Uploads above 5 MB use resumable sessions.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="two">
+        <div>
+          <h3>Good fit</h3>
+          <ul>
+            <li>User uploads for small and medium apps</li>
+            <li>Side projects that shouldn't pay a storage bill</li>
+            <li>Teams already paying for Workspace storage</li>
+            <li>Backups and documents behind your own auth</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Use real object storage for</h3>
+          <ul>
+            <li>A busy public CDN origin without a cache</li>
+            <li>Millions of objects per bucket or a data lake</li>
+            <li>Strong consistency, residency or object lock</li>
+            <li>Serving video at scale</li>
+          </ul>
+        </div>
+      </div>
+      <p class="caption" style="margin-top:28px">Full table, Google's terms and abuse notes: <a href="https://github.com/OneLab-X/drive-bucket#limits-read-this-first">Limits in the README →</a></p>
+    </div>
+  </section>
+
+  <section class="block" id="docs">
+    <div class="wrap">
+      <h2>Documentation</h2>
+      <p class="intro">Guides live in the repository. Start with the one that matches your stack.</p>
+      <div class="docs">
+        <div class="doc"><a href="https://github.com/OneLab-X/drive-bucket#quick-start">Quick start →</a><p>Google Cloud setup, refresh token and first bucket.</p></div>
+        <div class="doc"><a href="https://github.com/OneLab-X/drive-bucket/blob/production/docs/quickstart-express.md">Express →</a><p><code>DriveAdapter</code> with a streaming multer storage engine.</p></div>
+        <div class="doc"><a href="https://github.com/OneLab-X/drive-bucket/blob/production/docs/quickstart-nextjs.md">Next.js →</a><p><code>createDriveRoute()</code> and <code>uploadFile()</code> with client-side resize.</p></div>
+        <div class="doc"><a href="https://github.com/OneLab-X/drive-bucket/blob/production/docs/docker-cloudflare.md">Docker + Cloudflare →</a><p>S3 endpoint and public image proxy behind a CDN.</p></div>
+        <div class="doc"><a href="https://github.com/OneLab-X/drive-bucket/blob/production/docs/migrate-from-s3.md">Migrating from S3 →</a><p>Copy data with rclone, change <code>endpoint</code>, check what differs.</p></div>
+        <div class="doc"><a href="https://github.com/OneLab-X/drive-bucket/blob/production/docs/drive-api-notes.md">Drive API notes →</a><p>Quotas, property limits and how Drive v3 behaves.</p></div>
+        <div class="doc"><a href="https://github.com/OneLab-X/drive-bucket/blob/production/packages/server/README.md">Server reference →</a><p>Environment variables, S3 API coverage and resizing.</p></div>
+        <div class="doc"><a href="https://github.com/OneLab-X/drive-bucket/tree/production/examples">Examples →</a><p>Runnable Express and Next.js photo-upload apps.</p></div>
+        <div class="doc"><a href="https://github.com/OneLab-X/drive-bucket/blob/production/CONTRIBUTING.md">Contributing →</a><p>Develop locally and test against a fake Drive.</p></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap row">
+    <span>drivebucket · MIT licensed · Not affiliated with Google.</span>
+    <nav aria-label="Footer">
+      <a href="https://github.com/OneLab-X/drive-bucket">GitHub</a>
+      <a href="https://github.com/OneLab-X/drive-bucket/tree/production/docs">Docs</a>
+      <a href="https://www.npmjs.com/org/drivebucket">npm</a>
+      <a href="https://github.com/OneLab-X/drive-bucket/blob/production/SECURITY.md">Security</a>
+    </nav>
+  </div>
+</footer>
+
+<a class="to-top" href="#" id="top">↑ Top</a>
+
+<script>
+  // Theme toggle
+  (function () {
+    var root = document.documentElement;
+    document.getElementById('theme').addEventListener('click', function () {
+      var current = root.getAttribute('data-theme') ||
+        (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      var next = current === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      try { localStorage.setItem('db-theme', next); } catch (e) {}
+    });
+  })();
+
+  // Copy buttons
+  document.querySelectorAll('.copy').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var pre = document.getElementById(btn.dataset.copy);
+      var text = pre.innerText.replace(/^\$ /gm, '');
+      var done = function () {
+        btn.textContent = 'Copied'; btn.setAttribute('data-done', '');
+        setTimeout(function () { btn.textContent = 'Copy'; btn.removeAttribute('data-done'); }, 1600);
+      };
+      if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, function () {});
+    });
+  });
+
+  // Tabs
+  (function () {
+    var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
+    function select(tab) {
+      tabs.forEach(function (t) {
+        var on = t === tab;
+        t.setAttribute('aria-selected', on);
+        t.tabIndex = on ? 0 : -1;
+        document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+      });
+    }
+    tabs.forEach(function (t, i) {
+      t.addEventListener('click', function () { select(t); });
+      t.addEventListener('keydown', function (e) {
+        var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+        if (!d) return;
+        var n = tabs[(i + d + tabs.length) % tabs.length];
+        select(n); n.focus();
+      });
+    });
+  })();
+
+  // Back-to-top and current section in nav
+  (function () {
+    var top = document.getElementById('top');
+    addEventListener('scroll', function () { top.classList.toggle('show', scrollY > 700); }, { passive: true });
+    var links = document.querySelectorAll('nav.sub a');
+    if (!('IntersectionObserver' in window)) return;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        links.forEach(function (a) {
+          if (a.getAttribute('href') === '#' + e.target.id) a.setAttribute('aria-current', 'true');
+          else a.removeAttribute('aria-current');
+        });
+      });
+    }, { rootMargin: '-40% 0px -55% 0px' });
+    document.querySelectorAll('#start, section.block').forEach(function (s) { io.observe(s); });
+  })();
+</script>
+</body>
+</html>
