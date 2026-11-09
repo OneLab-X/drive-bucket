@@ -10,3 +10,9 @@ credentials*.json
 next-env.d.ts
 *.tsbuildinfo
 .env.local
+
+# HyperFrames video project: build artifacts and local renders
+video/**/.hyperframes/
+video/**/renders/
+video/**/.thumbnails/
+video/**/.waveform-cache/

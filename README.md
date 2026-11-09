@@ -5,6 +5,15 @@ low- to medium-volume app (photos, documents, backups) instead of S3, GCS or Azu
 It's free on a personal Google account, or uses the storage your Workspace plan already includes.
 It speaks the S3 API, so existing `@aws-sdk/client-s3` code works by changing `endpoint`.
 
+<p align="center">
+  <a href="docs/media/how-it-works.mp4">
+    <img src="docs/media/how-it-works.gif" width="800"
+      alt="How drivebucket works: a photo is resized in the browser, streamed through the upload route into a Google Drive folder with its key written on the file, the key is saved in the app's database, the first view downloads it from Drive and later views come from the CDN, and S3 code switches by changing its endpoint">
+  </a>
+  <br>
+  <sub>How it works, in 54 seconds · <a href="docs/media/how-it-works.mp4">watch the MP4 (with sound)</a> · made with HyperFrames, source in <a href="video/how-it-works">video/how-it-works</a></sub>
+</p>
+
 ```ts
 const s3 = new S3Client({ endpoint: 'https://files.example.com', forcePathStyle: true, region: 'us-east-1', credentials });
 await s3.send(new PutObjectCommand({ Bucket: 'photos', Key: 'cat.jpg', Body, ContentType: 'image/jpeg' }));

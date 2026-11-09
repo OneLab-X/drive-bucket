@@ -1,0 +1,84 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; font-family: 'Outfit', sans-serif; color: #0E1B2A; }
+    .stage { position: absolute; inset: 0; }
+    .tclip { position: absolute; inset: 0; }
+    .title { position: absolute; left: 120px; top: 110px; width: 700px; margin: 0;
+             font: 700 80px/1.05 'Outfit', sans-serif; letter-spacing: -0.015em; color: #0E1B2A; }
+    .title .w { display: inline-block; }
+    .accent { color: #E0441A; }
+    .mono { font-family: 'IBM Plex Mono', monospace; font-weight: 500; }
+    .card { position: absolute; background: #fff; border-radius: 18px; box-shadow: 0 14px 0 rgba(14,27,42,0.10); }
+    .photo { position: absolute; background: #fff; box-shadow: 0 14px 0 rgba(14,27,42,0.10); }
+    .photo svg { display: block; width: 100%; height: 100%; }
+    .lbl { position: absolute; font-family: 'IBM Plex Mono', monospace; font-weight: 500; font-size: 30px; color: #0E1B2A; white-space: nowrap; }
+    .sub { position: absolute; font-family: 'IBM Plex Mono', monospace; font-weight: 500; font-size: 28px; color: #5B6B7C; white-space: nowrap; }
+    .ok { color: #1E9E62; }
+
+    .s4-fold { position: absolute; left: 140px; top: 400px; width: 760px; height: 540px; }
+    #s4-fold-back { z-index: 1; }
+    #s4-fold-front { z-index: 6; }
+    #s4-path { left: 160px; top: 960px; }
+    #s4-cardwrap { position: absolute; left: 840px; top: 300px; width: 760px; height: 560px; perspective: 2200px; z-index: 4; }
+    #s4-card { position: absolute; inset: 0; transform-style: preserve-3d; }
+    .s4-face { position: absolute; inset: 0; background: #fff; border-radius: 18px; box-shadow: 0 14px 0 rgba(14,27,42,0.10);
+               backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+    #s4-back { transform: rotateY(180deg); }
+    #s4-front-photo { position: absolute; left: 40px; top: 40px; width: 680px; height: 390px; }
+    #s4-front-photo svg { width: 100%; height: 100%; display: block; }
+    #s4-front-name { left: 40px; top: 465px; font-size: 34px; }
+    #s4-back-h { left: 48px; top: 48px; }
+    .s4-row { position: absolute; left: 48px; right: 48px; height: 60px; font: 500 34px/60px 'IBM Plex Mono', monospace; border-bottom: 2px solid #E3E8EE; white-space: nowrap; }
+    .s4-k { display: inline-block; width: 250px; color: #5B6B7C; }
+    #s4-md5 { left: 48px; top: 430px; font-size: 32px; }
+
+  </style>
+  <div id="root" data-composition-id="s4-drive" data-width="1920" data-height="1080">
+
+    <div id="s4-stage" class="stage">
+      <div id="s4-fold-back" class="s4-fold"><svg width="760" height="540" viewBox="0 0 760 540"><path d="M3 64.8 Q3 3 18 3 H266.8 Q282.8 3 294.8 32.4 L308.8 64.8 H742 Q757 64.8 757 79.8 V522 Q757 537 742 537 H18 Q3 537 3 522 Z" fill="#D99A2B" stroke="#0E1B2A" stroke-width="3"/></svg></div>
+      <div id="s4-fold-front" class="s4-fold"><svg width="760" height="540" viewBox="0 0 760 540"><path d="M3 162.0 Q3 118.8 18 118.8 H742 Q757 118.8 757 162.0 V522 Q757 537 742 537 H18 Q3 537 3 522 Z" fill="#F2B84B" stroke="#0E1B2A" stroke-width="3"/><text x="60.800000000000004" y="245.2" font-family="IBM Plex Mono" font-weight="500" font-size="52" fill="#0E1B2A">photos</text></svg></div>
+      <div id="s4-path" class="sub">My Drive › drivebucket › photos</div>
+      <div id="s4-cardwrap"><div id="s4-card">
+        <div id="s4-front" class="s4-face"><div id="s4-front-photo"><svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice"><rect width="400" height="300" fill="#9ED4F5"/><circle cx="300" cy="82" r="40" fill="#FFC94A"/><path d="M0 225 Q 110 135 225 205 T 400 185 V300 H0Z" fill="#4FA36B"/><path d="M0 262 Q 150 196 262 248 T 400 236 V300 H0Z" fill="#2F7D4F"/></svg></div>
+          <div id="s4-front-name" class="lbl">9f3c….webp</div></div>
+        <div id="s4-back" class="s4-face"><div id="s4-back-h" class="sub">appProperties</div><div class="s4-row" style="top:120px"><span class="s4-k">drivebucket</span><span class="s4-v" id="s4-v0">object</span></div><div class="s4-row" style="top:190px"><span class="s4-k">b</span><span class="s4-v" id="s4-v1">photos</span></div><div class="s4-row" style="top:260px"><span class="s4-k">kh</span><span class="s4-v" id="s4-v2">9f3c…e1</span></div><div class="s4-row" style="top:330px"><span class="s4-k">k0</span><span class="s4-v" id="s4-v3">users/u_42/9f3c….webp</span></div>
+          <div id="s4-md5" class="lbl"><span class="ok">✓</span> md5 matches what was sent</div></div>
+      </div></div>
+    </div>
+    <div id="s4-t1" class="clip tclip" data-start="0.3" data-duration="4.1"><h1 class="title" style="left:120px;top:110px;width:720px;font-size:80px"><span class="w">Bucket</span> <span class="w">=</span> <span class="w">a</span> <span class="w">Drive</span> <span class="w accent">folder</span></h1></div>
+    <div id="s4-t2" class="clip tclip" data-start="4.6" data-duration="4.2"><h1 class="title" style="left:120px;top:110px;width:700px;font-size:80px"><span class="w">Its</span> <span class="w accent">key</span> <span class="w">is</span> <span class="w">written</span> <span class="w">on</span> <span class="w">the</span> <span class="w">file</span></h1></div>
+
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      const wordsIn = (sel, at) => tl.fromTo(sel, { opacity: 0, filter: "blur(6px)" },
+        { opacity: 1, filter: "blur(0px)", duration: 0.13, stagger: 0.07, ease: "power2.out" }, at);
+      const wordsOut = (sel, at) => tl.to(sel, { opacity: 0, filter: "blur(8px)", duration: 0.18,
+        stagger: 0.03, ease: "power3.in" }, at);
+
+      // The folder is already on screen (the push landed on it).
+      // Continue the push: the folder starts where the last shot left it (centre, enlarged) and settles left.
+      tl.fromTo(".s4-fold", { x: 440, y: -130, scale: 1.6 }, { x: 0, y: 0, scale: 1, transformOrigin: "50% 50%", duration: 0.9, ease: "power2.inOut" }, 0);
+      wordsIn("#s4-t1 .w", 0.4);
+      tl.fromTo("#s4-path", { opacity: 0 }, { opacity: 1, duration: 0.2 }, 0.9);
+      // The file drops into the folder (card shown small, behind the folder front).
+      tl.fromTo("#s4-cardwrap", { x: -560, y: -900, scale: 0.42 },
+        { x: -560, y: -60, scale: 0.42, duration: 0.8, ease: "expo.out" }, 1.0);
+      wordsOut("#s4-t1 .w", 4.15);
+      // It lifts out to the right at full size, the folder steps back.
+      tl.to("#s4-cardwrap", { x: 0, y: 0, scale: 1, zIndex: 8, duration: 0.9, ease: "power2.inOut" }, 3.4);
+      tl.to([".s4-fold", "#s4-path"], { x: -60, opacity: 0.35, duration: 0.9, ease: "power2.inOut" }, 3.5);
+      wordsIn("#s4-t2 .w", 4.7);
+      // Hero: the card flips to show what drivebucket wrote on it.
+      tl.fromTo("#s4-card", { rotationY: 0 }, { rotationY: 180, duration: 0.8, ease: "power2.inOut" }, 5.0);
+      tl.fromTo(".s4-row", { opacity: 0 }, { opacity: 1, duration: 0.15, stagger: 0.08 }, 5.6);
+      tl.fromTo("#s4-md5", { opacity: 0, scale: 1.12 }, { opacity: 1, scale: 1, transformOrigin: "0% 50%", duration: 0.3, ease: "expo.out" }, 7.0);
+      tl.to("#s4-v3", { color: "#E0441A", duration: 0.2 }, 7.6);
+      wordsOut("#s4-t2 .w", 8.75);
+
+      window.__timelines["s4-drive"] = tl;
+    })();
+  </script>
+</template>

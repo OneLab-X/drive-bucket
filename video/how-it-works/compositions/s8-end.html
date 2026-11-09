@@ -1,0 +1,57 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; font-family: 'Outfit', sans-serif; color: #0E1B2A; }
+    .stage { position: absolute; inset: 0; }
+    .tclip { position: absolute; inset: 0; }
+    .title { position: absolute; left: 120px; top: 110px; width: 700px; margin: 0;
+             font: 700 80px/1.05 'Outfit', sans-serif; letter-spacing: -0.015em; color: #0E1B2A; }
+    .title .w { display: inline-block; }
+    .accent { color: #E0441A; }
+    .mono { font-family: 'IBM Plex Mono', monospace; font-weight: 500; }
+    .card { position: absolute; background: #fff; border-radius: 18px; box-shadow: 0 14px 0 rgba(14,27,42,0.10); }
+    .photo { position: absolute; background: #fff; box-shadow: 0 14px 0 rgba(14,27,42,0.10); }
+    .photo svg { display: block; width: 100%; height: 100%; }
+    .lbl { position: absolute; font-family: 'IBM Plex Mono', monospace; font-weight: 500; font-size: 30px; color: #0E1B2A; white-space: nowrap; }
+    .sub { position: absolute; font-family: 'IBM Plex Mono', monospace; font-weight: 500; font-size: 28px; color: #5B6B7C; white-space: nowrap; }
+    .ok { color: #1E9E62; }
+
+    #s8-name { position: absolute; left: 120px; top: 520px; font: 700 72px/1 'Outfit', sans-serif; letter-spacing: -0.02em; white-space: nowrap; }
+    #s8-repo { left: 120px; top: 630px; font-size: 34px; }
+    #s8-npm { left: 120px; top: 690px; font-size: 34px; }
+    #s8-limit { left: 120px; top: 800px; font-size: 28px; }
+    .s8-fold { position: absolute; left: 1330px; top: 430px; width: 460px; height: 330px; }
+    #s8-fold-back { z-index: 1; }
+    #s8-fold-front { z-index: 3; }
+
+  </style>
+  <div id="root" data-composition-id="s8-end" data-width="1920" data-height="1080">
+
+    <div id="s8-fold-back" class="s8-fold"><svg width="460" height="330" viewBox="0 0 460 330"><path d="M3 39.6 Q3 3 18 3 H152.8 Q168.8 3 180.8 19.8 L194.8 39.6 H442 Q457 39.6 457 54.6 V312 Q457 327 442 327 H18 Q3 327 3 312 Z" fill="#D99A2B" stroke="#0E1B2A" stroke-width="3"/></svg></div>
+    <div id="s8-file" class="photo" style="left:1430px;top:360px;width:230px;height:172px;padding:10px;z-index:2;"><svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice"><rect width="400" height="300" fill="#9ED4F5"/><circle cx="300" cy="82" r="40" fill="#FFC94A"/><path d="M0 225 Q 110 135 225 205 T 400 185 V300 H0Z" fill="#4FA36B"/><path d="M0 262 Q 150 196 262 248 T 400 236 V300 H0Z" fill="#2F7D4F"/></svg></div>
+    <div id="s8-fold-front" class="s8-fold"><svg width="460" height="330" viewBox="0 0 460 330"><path d="M3 99.0 Q3 72.6 18 72.6 H442 Q457 72.6 457 99.0 V312 Q457 327 442 327 H18 Q3 327 3 312 Z" fill="#F2B84B" stroke="#0E1B2A" stroke-width="3"/><text x="36.800000000000004" y="166.2" font-family="IBM Plex Mono" font-weight="500" font-size="42" fill="#0E1B2A">photos</text></svg></div>
+    <div id="s8-name"><span id="s8-name-in">drivebucket</span></div>
+    <div id="s8-repo" class="lbl">github.com/OneLab-X/drive-bucket</div>
+    <div id="s8-npm" class="lbl">npm i @drivebucket/core</div>
+    <div id="s8-limit" class="sub">750 GB/day upload limit · put a CDN in front</div>
+    <div id="s8-t" class="clip tclip" data-start="0.15" data-duration="5.85"><h1 class="title" style="left:120px;top:200px;width:1100px;font-size:104px"><span class="w">Google</span> <span class="w">Drive</span> <span class="w">as</span> <span class="w">your</span> <span class="w accent">object</span> <span class="w accent">store</span></h1></div>
+
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      const wordsIn = (sel, at) => tl.fromTo(sel, { opacity: 0, filter: "blur(6px)" },
+        { opacity: 1, filter: "blur(0px)", duration: 0.13, stagger: 0.07, ease: "power2.out" }, at);
+      const wordsOut = (sel, at) => tl.to(sel, { opacity: 0, filter: "blur(8px)", duration: 0.18,
+        stagger: 0.03, ease: "power3.in" }, at);
+
+      wordsIn("#s8-t .w", 0.2);
+      tl.fromTo(".s8-fold", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.6, ease: "expo.out" }, 0.3);
+      tl.fromTo("#s8-file", { opacity: 0, y: -260, rotation: -4 }, { opacity: 1, y: 70, rotation: 0, duration: 0.7, ease: "expo.out" }, 0.6);
+      tl.fromTo("#s8-name-in", { clipPath: "inset(0 100% 0 0)" }, { clipPath: "inset(0 0% 0 0)", duration: 0.55, ease: "steps(11)" }, 1.2);
+      tl.fromTo(["#s8-repo", "#s8-npm"], { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, stagger: 0.12 }, 1.9);
+      tl.fromTo("#s8-limit", { opacity: 0 }, { opacity: 1, duration: 0.25 }, 2.4);
+
+      window.__timelines["s8-end"] = tl;
+    })();
+  </script>
+</template>
