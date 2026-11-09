@@ -1,0 +1,86 @@
+{
+  "name": "@drivebucket/next",
+  "version": "0.0.0",
+  "description": "Next.js App Router upload/serve route and browser upload helper for drivebucket",
+  "license": "MIT",
+  "keywords": [
+    "nextjs",
+    "upload",
+    "google-drive",
+    "app-router"
+  ],
+  "homepage": "https://github.com/OWNER/drivebucket/tree/main/packages/next#readme",
+  "bugs": {
+    "url": "https://github.com/OWNER/drivebucket/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OWNER/drivebucket.git",
+    "directory": "packages/next"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./client": {
+      "import": {
+        "types": "./dist/client.d.ts",
+        "default": "./dist/client.js"
+      },
+      "require": {
+        "types": "./dist/client.d.cts",
+        "default": "./dist/client.cjs"
+      }
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "client": [
+        "./dist/client.d.ts"
+      ]
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@drivebucket/core": "workspace:*",
+    "busboy": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/busboy": "^1.5.5"
+  },
+  "peerDependencies": {
+    "next": ">=14"
+  },
+  "peerDependenciesMeta": {
+    "next": {
+      "optional": true
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

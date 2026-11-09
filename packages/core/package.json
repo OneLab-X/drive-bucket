@@ -1,0 +1,74 @@
+{
+  "name": "@drivebucket/core",
+  "version": "0.0.0",
+  "description": "Use Google Drive as an object store: StorageAdapter + DriveAdapter",
+  "license": "MIT",
+  "keywords": [
+    "google-drive",
+    "object-storage",
+    "s3",
+    "storage-adapter"
+  ],
+  "homepage": "https://github.com/OWNER/drivebucket/tree/main/packages/core#readme",
+  "bugs": {
+    "url": "https://github.com/OWNER/drivebucket/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OWNER/drivebucket.git",
+    "directory": "packages/core"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./testing": {
+      "import": {
+        "types": "./dist/testing/index.d.ts",
+        "default": "./dist/testing/index.js"
+      },
+      "require": {
+        "types": "./dist/testing/index.d.cts",
+        "default": "./dist/testing/index.cjs"
+      }
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "testing": [
+        "./dist/testing/index.d.ts"
+      ]
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@googleapis/drive": "^27.0.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

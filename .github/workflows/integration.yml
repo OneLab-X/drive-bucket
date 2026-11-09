@@ -1,0 +1,49 @@
+name: Integration (real Google Drive)
+
+# Runs the DRIVEBUCKET_IT suite against a throwaway Google account. Needs repository secrets
+# DRIVEBUCKET_CLIENT_ID, DRIVEBUCKET_CLIENT_SECRET, DRIVEBUCKET_REFRESH_TOKEN (from
+# `drivebucket auth login`). Use a dedicated account: the suite creates and deletes files.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 6 * * 1' # Mondays
+
+permissions:
+  contents: read
+
+concurrency:
+  group: integration
+  cancel-in-progress: false
+
+jobs:
+  drive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DRIVEBUCKET_CLIENT_ID: ${{ secrets.DRIVEBUCKET_CLIENT_ID }}
+      DRIVEBUCKET_CLIENT_SECRET: ${{ secrets.DRIVEBUCKET_CLIENT_SECRET }}
+      DRIVEBUCKET_REFRESH_TOKEN: ${{ secrets.DRIVEBUCKET_REFRESH_TOKEN }}
+    steps:
+      - name: Skip without credentials
+        if: env.DRIVEBUCKET_REFRESH_TOKEN == ''
+        run: echo "::notice::DRIVEBUCKET_* secrets not configured; skipping real-Drive tests" && exit 0
+      - uses: actions/checkout@v7
+        if: env.DRIVEBUCKET_REFRESH_TOKEN != ''
+      - uses: pnpm/action-setup@v6
+        if: env.DRIVEBUCKET_REFRESH_TOKEN != ''
+      - uses: actions/setup-node@v7
+        if: env.DRIVEBUCKET_REFRESH_TOKEN != ''
+        with:
+          node-version: 22
+          cache: pnpm
+      - if: env.DRIVEBUCKET_REFRESH_TOKEN != ''
+        run: pnpm install --frozen-lockfile
+      - if: env.DRIVEBUCKET_REFRESH_TOKEN != ''
+        run: pnpm --filter "./packages/*" build
+      - name: doctor
+        if: env.DRIVEBUCKET_REFRESH_TOKEN != ''
+        run: node packages/cli/dist/bin.js doctor
+      - name: integration tests
+        if: env.DRIVEBUCKET_REFRESH_TOKEN != ''
+        run: pnpm test:it

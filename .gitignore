@@ -1,0 +1,12 @@
+node_modules
+dist
+coverage
+*.log
+.env
+.env.*
+!.env.example
+credentials*.json
+.next
+next-env.d.ts
+*.tsbuildinfo
+.env.local

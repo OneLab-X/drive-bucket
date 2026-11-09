@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: test (node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20, 22, 24]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter "./packages/*" build
+      - run: pnpm --filter "./packages/*" typecheck
+      - run: pnpm test
+
+  packages:
+    name: package lint (publint + attw)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter "./packages/*" build
+      - run: pnpm lint:pkg
+      - run: pnpm lint:types
+
+  examples:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter "./packages/*" build
+      - run: pnpm --filter example-express-multer typecheck
+      - run: pnpm --filter example-next-photo-upload build
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          load: true
+          tags: drivebucket:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Smoke test image
+        run: |
+          # sharp's native binary loads in the runtime image
+          docker run --rm --entrypoint node drivebucket:ci -e "import('sharp').then(() => console.log('sharp ok'))"
+          # starts, validates config, exits with a readable error (no credentials given)
+          set +e
+          out=$(docker run --rm drivebucket:ci 2>&1); code=$?
+          set -e
+          echo "$out"
+          test "$code" -eq 1
+          echo "$out" | grep -q "No Google credentials"

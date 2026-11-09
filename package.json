@@ -1,0 +1,31 @@
+{
+  "name": "drivebucket-monorepo",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "vitest run",
+    "test:it": "DRIVEBUCKET_IT=1 vitest run --project integration",
+    "changeset": "changeset",
+    "release": "pnpm --filter \"./packages/*\" build && changeset publish",
+    "lint:pkg": "pnpm -r --filter \"./packages/*\" exec publint --strict",
+    "check": "pnpm typecheck && pnpm build && pnpm test && pnpm lint:pkg && pnpm lint:types",
+    "version-packages": "changeset version && pnpm install --lockfile-only",
+    "lint:types": "pnpm -r --filter \"./packages/*\" exec attw --pack . --ignore-rules cjs-resolves-to-esm"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^3.0.3",
+    "@types/node": "^22.10.0",
+    "tsup": "^9.0.0",
+    "typescript": "~5.9.3",
+    "vitest": "^5.1.0",
+    "publint": "^0.3.25",
+    "@arethetypeswrong/cli": "^0.18.5"
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "name": "@drivebucket/server",
+  "version": "0.0.0",
+  "description": "HTTP read proxy (and S3-compatible API) for drivebucket: Google Drive as object storage",
+  "license": "MIT",
+  "homepage": "https://github.com/OWNER/drivebucket/tree/main/packages/server#readme",
+  "bugs": {
+    "url": "https://github.com/OWNER/drivebucket/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OWNER/drivebucket.git",
+    "directory": "packages/server"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "drivebucket-server": "./dist/bin.js"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "start": "node dist/bin.js"
+  },
+  "dependencies": {
+    "@drivebucket/core": "workspace:*",
+    "fast-xml-parser": "^5.12.0",
+    "fastify": "^5.12.8",
+    "ioredis": "^6.0.0",
+    "prom-client": "^15.1.3",
+    "sharp": "^0.35.5"
+  },
+  "devDependencies": {
+    "@aws-sdk/client-s3": "^3.1164.0",
+    "@aws-sdk/lib-storage": "^3.1164.0",
+    "@aws-sdk/s3-request-presigner": "^3.1164.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}
