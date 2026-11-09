@@ -3,7 +3,7 @@
 #   docker build -t drivebucket .
 #   docker run -p 8080:8080 --env-file .env drivebucket
 
-FROM node:22-bookworm-slim AS build
+FROM node:26-bookworm-slim AS build
 RUN corepack enable
 WORKDIR /repo
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
@@ -15,7 +15,7 @@ COPY packages/server packages/server
 RUN pnpm --filter "@drivebucket/server..." build \
  && pnpm --filter @drivebucket/server deploy --prod /out
 
-FROM node:22-bookworm-slim
+FROM node:26-bookworm-slim
 ENV NODE_ENV=production \
     PORT=8080 \
     HOST=0.0.0.0 \
