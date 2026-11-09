@@ -3,13 +3,13 @@
   "version": "0.0.0",
   "description": "drivebucket command line: OAuth login, buckets, ls/cp/rm, doctor",
   "license": "MIT",
-  "homepage": "https://github.com/OWNER/drivebucket/tree/main/packages/cli#readme",
+  "homepage": "https://github.com/OneLab-X/drive-bucket/tree/production/packages/cli#readme",
   "bugs": {
-    "url": "https://github.com/OWNER/drivebucket/issues"
+    "url": "https://github.com/OneLab-X/drive-bucket/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/OWNER/drivebucket.git",
+    "url": "git+https://github.com/OneLab-X/drive-bucket.git",
     "directory": "packages/cli"
   },
   "type": "module",

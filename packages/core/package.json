@@ -9,13 +9,13 @@
     "s3",
     "storage-adapter"
   ],
-  "homepage": "https://github.com/OWNER/drivebucket/tree/main/packages/core#readme",
+  "homepage": "https://github.com/OneLab-X/drive-bucket/tree/production/packages/core#readme",
   "bugs": {
-    "url": "https://github.com/OWNER/drivebucket/issues"
+    "url": "https://github.com/OneLab-X/drive-bucket/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/OWNER/drivebucket.git",
+    "url": "git+https://github.com/OneLab-X/drive-bucket.git",
     "directory": "packages/core"
   },
   "type": "module",

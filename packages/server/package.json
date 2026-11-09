@@ -3,13 +3,13 @@
   "version": "0.0.0",
   "description": "HTTP read proxy (and S3-compatible API) for drivebucket: Google Drive as object storage",
   "license": "MIT",
-  "homepage": "https://github.com/OWNER/drivebucket/tree/main/packages/server#readme",
+  "homepage": "https://github.com/OneLab-X/drive-bucket/tree/production/packages/server#readme",
   "bugs": {
-    "url": "https://github.com/OWNER/drivebucket/issues"
+    "url": "https://github.com/OneLab-X/drive-bucket/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/OWNER/drivebucket.git",
+    "url": "git+https://github.com/OneLab-X/drive-bucket.git",
     "directory": "packages/server"
   },
   "type": "module",

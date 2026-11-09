@@ -9,13 +9,13 @@
     "google-drive",
     "app-router"
   ],
-  "homepage": "https://github.com/OWNER/drivebucket/tree/main/packages/next#readme",
+  "homepage": "https://github.com/OneLab-X/drive-bucket/tree/production/packages/next#readme",
   "bugs": {
-    "url": "https://github.com/OWNER/drivebucket/issues"
+    "url": "https://github.com/OneLab-X/drive-bucket/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/OWNER/drivebucket.git",
+    "url": "git+https://github.com/OneLab-X/drive-bucket.git",
     "directory": "packages/next"
   },
   "type": "module",
