@@ -1,6 +1,6 @@
 {
   "name": "@drivebucket/server",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "HTTP read proxy (and S3-compatible API) for drivebucket: Google Drive as object storage",
   "license": "MIT",
   "homepage": "https://github.com/OneLab-X/drive-bucket/tree/production/packages/server#readme",

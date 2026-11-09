@@ -1,6 +1,6 @@
 {
   "name": "@drivebucket/cli",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "drivebucket command line: OAuth login, buckets, ls/cp/rm, doctor",
   "license": "MIT",
   "homepage": "https://github.com/OneLab-X/drive-bucket/tree/production/packages/cli#readme",
