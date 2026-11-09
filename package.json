@@ -15,7 +15,7 @@
     "changeset": "changeset",
     "release": "pnpm --filter \"./packages/*\" build && changeset publish",
     "lint:pkg": "pnpm -r --filter \"./packages/*\" exec publint --strict",
-    "check": "pnpm typecheck && pnpm build && pnpm test && pnpm lint:pkg && pnpm lint:types",
+    "check": "pnpm build && pnpm typecheck && pnpm test && pnpm lint:pkg && pnpm lint:types",
     "version-packages": "changeset version && pnpm install --lockfile-only",
     "lint:types": "pnpm -r --filter \"./packages/*\" exec attw --pack . --ignore-rules cjs-resolves-to-esm"
   },
