@@ -33,7 +33,7 @@ jobs:
           cp docs/media/how-it-works.mp4 _site/media/
           touch _site/.nojekyll
       - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
       - id: deployment
